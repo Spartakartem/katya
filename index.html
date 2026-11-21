@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Катя ❤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, #2a0a1a 0%, #12040c 60%, #05010a 100%);
+    font-family: 'Cormorant Garamond', serif;
+    color: #f5e6ec;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+
+  #canvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+
+  .title {
+    font-family: 'Great Vibes', cursive;
+    font-size: clamp(40px, 9vw, 72px);
+    line-height: 1;
+    background: linear-gradient(135deg, #ff8fb1 0%, #ff3d7f 40%, #ffb199 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 18px rgba(255, 80, 130, 0.4));
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: clamp(14px, 3vw, 17px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255, 200, 220, 0.55);
+    margin-bottom: 40px;
+  }
+
+  .heart-btn {
+    width: 150px;
+    height: 150px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+    will-change: transform;
+  }
+  .heart-btn.pop { transform: scale(0.88); }
+  .heart-btn svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 24px rgba(255, 60, 110, 0.75))
+            drop-shadow(0 0 60px rgba(255, 30, 90, 0.45));
+    animation: heartbeat 1.6s ease-in-out infinite;
+  }
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    15%      { transform: scale(1.06); }
+    30%      { transform: scale(0.98); }
+    45%      { transform: scale(1.04); }
+  }
+
+  .counter {
+    margin-top: 36px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: rgba(255, 200, 220, 0.55);
+    min-height: 24px;
+    transition: color 0.3s;
+  }
+  .counter b { color: #ff8fb1; font-weight: 600; }
+
+  .hint {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 200, 220, 0.35);
+    z-index: 2;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* Всплывающий комплимент */
+  .compliment {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: clamp(20px, 4.5vw, 30px);
+    line-height: 1.4;
+    text-align: center;
+    max-width: 560px;
+    padding: 0 24px;
+    color: #fff;
+    text-shadow: 0 0 24px rgba(255, 90, 140, 0.8),
+                 0 0 60px rgba(255, 60, 110, 0.5);
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    animation: complimentFloat 2.6s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  }
+  @keyframes complimentFloat {
+    0%   { opacity: 0; transform: translate(-50%, calc(-50% + 20px)) scale(0.7); }
+    18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+    30%  { transform: translate(-50%, -50%) scale(1); }
+    75%  { opacity: 1; transform: translate(-50%, calc(-50% - 60px)) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, calc(-50% - 110px)) scale(0.95); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="stage">
+  <div class="title">Катя</div>
+  <div class="subtitle">нажми на сердце</div>
+
+  <div class="heart-btn" id="heartBtn">
+    <svg viewBox="0 0 32 29" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="hg" cx="50%" cy="35%" r="75%">
+          <stop offset="0%"  stop-color="#ff9ec0"/>
+          <stop offset="55%" stop-color="#ff3d7f"/>
+          <stop offset="100%" stop-color="#a30036"/>
+        </radialGradient>
+      </defs>
+      <path fill="url(#hg)" d="M16 29S0 18.7 0 8.9C0 4 3.9 0 8.9 0c3 0 5.5 1.6 7.1 4C17.6 1.6 20.1 0 23.1 0 28.1 0 32 4 32 8.9 32 18.7 16 29 16 29z"/>
+    </svg>
+  </div>
+
+  <div class="counter" id="counter"></div>
+</div>
+
+<div class="hint">ты можешь жать сколько хочешь</div>
+
+<script>
+(function () {
+  /* ------- Комплименты ------- */
+  const COMPLIMENTS = [
+    'У тебя самая тёплая улыбка на свете.',
+    'С тобой даже обычный день становится особенным.',
+    'В твоих глазах можно потеряться и не захотеть обратно.',
+    'Ты умеешь делать людей счастливее просто так.',
+    'Твой смех — лучше любой музыки.',
+    'Ты гораздо сильнее, чем думаешь.',
+    'В тебе столько света, что хватает на всех вокруг.',
+    'С тобой хочется быть лучшей версией себя.',
+    'Ты — редкая. Это правда.',
+    'О таких, как ты, пишут стихи.',
+    'Ты умеешь слушать так, что хочется рассказывать всё.',
+    'Твоя доброта незаметно меняет мир к лучшему.',
+    'С тобой рядом спокойно и по-настоящему.',
+    'Ты красивая. Не только снаружи.',
+    'Тебе идёт быть счастливой.',
+    'Ты — причина улыбаться без причины.',
+    'Твой голос — это отдельный вид уюта.',
+    'Ты думаешь, что ты обычная. А ты чудо.',
+    'С тобой не нужно играть роли — и это бесценно.',
+    'Ты вдохновляешь, даже когда молчишь.',
+    'Всё в тебе — к месту и вовремя.',
+    'У тебя сердце, в которое хочется верить.',
+    'Ты делаешь этот мир мягче.',
+    'Твоя забота — это тихое, но большое счастье.',
+    'Ты как тёплый плед в холодный вечер.',
+    'Ты — та, о ком хочется говорить в настоящем времени.',
+    'С тобой хочется делить и радость, и тишину.',
+    'Ты — не про идеальность. Ты про настоящее.',
+    'Твоя искренность — это суперсила.',
+    'Ты — маленькое чудо, которое происходит каждый день.',
+  ];
+
+  /* ------- Утилиты ------- */
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = arr => arr[(Math.random() * arr.length) | 0];
+
+  /* ------- Счётчик ------- */
+  const counterEl = document.getElementById('counter');
+  let count = 0;
+  function updateCounter() {
+    counterEl.innerHTML = count === 0
+      ? ''
+      : `нажатий: <b>${count}</b>`;
+  }
+
+  /* ------- Очередь без повторов ------- */
+  let bag = [];
+  function nextCompliment() {
+    if (bag.length === 0) {
+      bag = COMPLIMENTS.slice();
+      // перемешать
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+    }
+    return bag.pop();
+  }
+
+  /* ------- Показ комплимента ------- */
+  let lastEl = null;
+  function showCompliment() {
+    const el = document.createElement('div');
+    el.className = 'compliment';
+    el.textContent = nextCompliment();
+    // небольшая вариация положения по горизонтали
+    const offset = rand(-40, 40);
+    el.style.marginLeft = offset + 'px';
+    document.body.appendChild(el);
+    if (lastEl && lastEl.parentNode) lastEl.parentNode.removeChild(lastEl);
+    lastEl = el;
+    setTimeout(() => el.remove(), 2700);
+  }
+
+  /* ------- Canvas-частицы и физика сердечек ------- */
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* Фоновые мерцающие частицы */
+  const particles = [];
+  const PARTICLE_COUNT = 60;
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: rand(0, W),
+      y: rand(0, H),
+      r: rand(0.6, 2.0),
+      vy: rand(-0.25, -0.6),
+      vx: rand(-0.15, 0.15),
+      alpha: rand(0.2, 0.7),
+      twSpeed: rand(0.005, 0.02),
+      twPhase: rand(0, Math.PI * 2),
+      hue: rand(330, 350),
+    });
+  }
+
+  /* Сердечки при клике */
+  const hearts = [];
+  const HEART_EMOJIS = ['❤', '💖', '💕', '💗', '💘', '💝'];
+
+  function spawnBurst(x, y, amount) {
+    for (let i = 0; i < amount; i++) {
+      const angle = rand(0, Math.PI * 2);
+      const speed = rand(2.5, 9);
+      hearts.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - rand(1, 4),
+        size: rand(14, 32),
+        life: 0,
+        maxLife: rand(90, 160),
+        gravity: rand(0.04, 0.09),
+        friction: 0.985,
+        emoji: pick(HEART_EMOJIS),
+        rot: rand(0, Math.PI * 2),
+        rotate: rand(-0.06, 0.06),
+      });
+    }
+  }
+
+  /* ------- Клик по сердцу ------- */
+  const heartBtn = document.getElementById('heartBtn');
+
+  function handleTap(clientX, clientY) {
+    count++;
+    updateCounter();
+
+    // анимация "поп"
+    heartBtn.classList.remove('pop');
+    // force reflow
+    void heartBtn.offsetWidth;
+    heartBtn.classList.add('pop');
+    setTimeout(() => heartBtn.classList.remove('pop'), 150);
+
+    // взрыв сердечек в точке клика (или в центре сердца)
+    const rect = heartBtn.getBoundingClientRect();
+    const cx = clientX != null ? clientX : rect.left + rect.width / 2;
+    const cy = clientY != null ? clientY : rect.top + rect.height / 2;
+    spawnBurst(cx, cy, 14 + Math.min(count, 20));
+
+    showCompliment();
+  }
+
+  heartBtn.addEventListener('click', e => handleTap(e.clientX, e.clientY));
+  heartBtn.addEventListener('touchstart', e => {
+    const t = e.changedTouches[0];
+    handleTap(t.clientX, t.clientY);
+  }, { passive: true });
+
+  /* ------- Рендер ------- */
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+    const t = performance.now();
+
+    // частицы
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y < -10) { p.y = H + 10; p.x = rand(0, W); }
+      if (p.x < -10) p.x = W + 10;
+      if (p.x > W + 10) p.x = -10;
+
+      const tw = 0.5 + 0.5 * Math.sin(t * p.twSpeed + p.twPhase);
+      const a = p.alpha * (0.5 + 0.5 * tw);
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
+      g.addColorStop(0, `hsla(${p.hue}, 100%, 75%, ${a})`);
+      g.addColorStop(1, `hsla(${p.hue}, 100%, 50%, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // сердечки
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = hearts.length - 1; i >= 0; i--) {
+      const h = hearts[i];
+      h.vx *= h.friction;
+      h.vy = h.vy * h.friction + h.gravity;
+      h.x += h.vx;
+      h.y += h.vy;
+      h.rot += h.rotate;
+      h.life++;
+
+      const fadeStart = h.maxLife - 40;
+      const alpha = h.life > fadeStart
+        ? Math.max(0, (h.maxLife - h.life) / 40)
+        : 1;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(h.x, h.y);
+      ctx.rotate(h.rot);
+      ctx.font = `${h.size}px serif`;
+      ctx.shadowColor = 'rgba(255, 90, 140, 0.9)';
+      ctx.shadowBlur = 14;
+      ctx.fillText(h.emoji, 0, 0);
+      ctx.restore();
+
+      if (h.life >= h.maxLife) hearts.splice(i, 1);
+    }
+
+    requestAnimationFrame(render);
+  }
+  render();
+})();
+</script>
+</body>
+</html>
